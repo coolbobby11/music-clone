@@ -29,6 +29,7 @@
     color: #fff;
     text-decoration: none;
     margin-bottom: 5px;
+    cursor: pointer;
   }
   .sidebar a:hover {
     background: #333;
@@ -172,11 +173,11 @@
 <body>
 
 <div class="sidebar">
-  <a href="#">Home</a>
+  <a onclick="loadFYP()">Home</a>
   <a href="#">Shorts</a>
   <a href="#">Subscriptions</a>
   <hr style="border-color:#333;">
-  <a href="#">History</a>
+  <a onclick="loadHistory()">History</a>
   <a href="#">Playlists</a>
   <a href="#">Your Videos</a>
   <a href="#">Watch Later</a>
@@ -185,7 +186,7 @@
 
 <div class="top-bar">
   <div class="categories" id="categories">
-    <button>All</button>
+    <button onclick="loadFYP()">All</button>
     <button>Music</button>
     <button>Gaming</button>
     <button>Live</button>
@@ -218,7 +219,7 @@
 <script>
 const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // replace with your API key
 let nextPageToken = null;
-let currentMode = "fyp"; // "fyp" or "search"
+let currentMode = "fyp"; // "fyp", "search", "history"
 let currentQuery = "";
 
 // fetch popular videos for FYP
@@ -229,6 +230,8 @@ async function fetchFYP(loadMore = false) {
   const data = await res.json();
   nextPageToken = data.nextPageToken || null;
   displayVideos(data.items, 'video-list', loadMore);
+  currentMode = "fyp";
+  document.getElementById("section-title").innerText = "For You";
 }
 
 // fetch shorts (one-time load)
@@ -258,6 +261,7 @@ async function searchVideos(loadMore = false) {
   displayVideos(data.items, 'video-list', loadMore);
 }
 
+// show videos in a grid
 function displayVideos(videos, containerId, append = false) {
   const container = document.getElementById(containerId);
   if (!append) container.innerHTML = "";
@@ -274,6 +278,7 @@ function displayVideos(videos, containerId, append = false) {
   });
 }
 
+// play video in overlay
 function playVideo(videoId, snippet, stats) {
   const overlay = document.getElementById('overlay');
   const playerDiv = document.getElementById('player');
@@ -288,11 +293,56 @@ function playVideo(videoId, snippet, stats) {
   `;
 
   overlay.style.display = "grid";
+
+  // save to history
+  saveToHistory({
+    id: videoId,
+    title: snippet.title,
+    channel: snippet.channelTitle,
+    thumbnail: snippet.thumbnails.medium.url
+  });
 }
 
+// close overlay
 function closeOverlay() {
   document.getElementById('overlay').style.display = "none";
   document.getElementById('player').innerHTML = "";
+}
+
+// save video to history (localStorage)
+function saveToHistory(video) {
+  let history = JSON.parse(localStorage.getItem("history")) || [];
+  history = history.filter(v => v.id !== video.id); // remove duplicates
+  history.unshift(video); // add to top
+  if (history.length > 50) history.pop(); // limit history
+  localStorage.setItem("history", JSON.stringify(history));
+}
+
+// load history page
+function loadHistory() {
+  currentMode = "history";
+  document.getElementById("section-title").innerText = "History";
+  document.getElementById("video-list").innerHTML = "";
+  const history = JSON.parse(localStorage.getItem("history")) || [];
+  if (history.length === 0) {
+    document.getElementById("video-list").innerHTML = "<p>No history yet.</p>";
+    return;
+  }
+  history.forEach(video => {
+    const div = document.createElement('div');
+    div.className = "video-item";
+    div.innerHTML = `
+      <img src="${video.thumbnail}" alt="${video.title}">
+      <p>${video.title}</p>
+    `;
+    div.onclick = () => playVideo(video.id, { 
+      title: video.title, 
+      channelTitle: video.channel, 
+      description: "" , 
+      thumbnails: { medium: { url: video.thumbnail } } 
+    }, null);
+    document.getElementById("video-list").appendChild(div);
+  });
 }
 
 // infinite scroll
@@ -307,7 +357,11 @@ window.addEventListener("scroll", () => {
 });
 
 // initial load
-fetchFYP();
+function loadFYP() {
+  document.getElementById('video-list').innerHTML = "";
+  fetchFYP();
+}
+loadFYP();
 fetchShorts();
 </script>
 
