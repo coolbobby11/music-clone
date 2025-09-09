@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Youtube Player</title>
+<title>YouTube Player</title>
 <style>
   body {
     margin: 0;
@@ -12,7 +12,6 @@
     color: #fff;
   }
 
-  /* sidebar */
   .sidebar {
     position: fixed;
     top: 0;
@@ -35,7 +34,6 @@
     background: #333;
   }
 
-  /* top bar (categories + search) */
   .top-bar {
     margin-left: 240px;
     padding: 10px 20px;
@@ -83,7 +81,6 @@
     background: #ff0000;
   }
 
-  /* video grids */
   .video-section {
     margin-left: 240px;
     padding: 20px;
@@ -105,7 +102,6 @@
     font-size: 14px;
   }
 
-  /* shorts horizontal row */
   .shorts-row {
     display: flex;
     overflow-x: auto;
@@ -125,63 +121,60 @@
     font-size: 12px;
   }
 
-  /* fullscreen overlay player */
- /* fullscreen overlay player */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  display: none;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  padding: 20px;
-  box-sizing: border-box;
-  z-index: 1000;
-}
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: none;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 1000;
+  }
 
-.player {
-  background: #000; /* Background behind iframe */
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6); /* Optional visual boost */
-}
+  .player {
+    background: #000;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  }
 
-.player iframe {
-  width: 100%;
-  height: 70vh;
-  border: none;
-  border-radius: 6px;
-}
+  .player iframe {
+    width: 100%;
+    height: 70vh;
+    border: none;
+    border-radius: 6px;
+  }
 
-.video-info {
-  overflow-y: auto;
-  background: #1a1a1a;
-  padding: 15px;
-  border-radius: 6px;
-}
+  .video-info {
+    overflow-y: auto;
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 6px;
+  }
 
-.video-info h3 {
-  margin: 0 0 10px 0;
-}
+  .video-info h3 {
+    margin: 0 0 10px 0;
+  }
 
-.video-info p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #bbb;
-}
+  .video-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #bbb;
+  }
 
-.close-btn {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  font-size: 28px;
-  color: #fff;
-  cursor: pointer;
-}
-
+  .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: #fff;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -231,58 +224,77 @@
 </div>
 
 <script>
-const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // replace with your API key
+const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // Replace with your own API key
 let nextPageToken = null;
-let currentMode = "fyp"; // "fyp", "search", "history"
+let currentMode = "fyp";
 let currentQuery = "";
+let shownVideoIds = new Set();
 
-// fetch popular videos for FYP
+// Load "For You" section
 async function fetchFYP(loadMore = false) {
+  if (!loadMore) {
+    nextPageToken = null;
+    shownVideoIds.clear();
+  }
+
   let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=US&maxResults=12&key=${API_KEY}`;
   if (loadMore && nextPageToken) url += `&pageToken=${nextPageToken}`;
+
   const res = await fetch(url);
   const data = await res.json();
+
   nextPageToken = data.nextPageToken || null;
+  console.log("Next page token:", nextPageToken);
+
   displayVideos(data.items, 'video-list', loadMore);
   currentMode = "fyp";
   document.getElementById("section-title").innerText = "For You";
 }
 
-// fetch shorts (one-time load)
+// Shorts fetch
 async function fetchShorts() {
   const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=short&maxResults=10&q=fun&key=${API_KEY}`);
   const data = await res.json();
   displayVideos(data.items, 'shorts-list');
 }
 
-// search videos
+// Search function
 async function searchVideos(loadMore = false) {
   const query = loadMore ? currentQuery : document.getElementById('search-input').value;
   if (!query) return;
 
   if (!loadMore) {
+    shownVideoIds.clear();
     document.getElementById('section-title').innerText = `Results for "${query}"`;
     document.getElementById('video-list').innerHTML = "";
+    nextPageToken = null;
   }
 
   let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`;
   if (loadMore && nextPageToken) url += `&pageToken=${nextPageToken}`;
+
   const res = await fetch(url);
   const data = await res.json();
+
   nextPageToken = data.nextPageToken || null;
   currentMode = "search";
   currentQuery = query;
+
   displayVideos(data.items, 'video-list', loadMore);
 }
 
-// show videos in a grid
+// Display videos and avoid duplicates
 function displayVideos(videos, containerId, append = false) {
   const container = document.getElementById(containerId);
   if (!append) container.innerHTML = "";
+
   videos.forEach(video => {
+    const videoId = video.id.videoId || video.id;
+    if (shownVideoIds.has(videoId)) return;
+    shownVideoIds.add(videoId);
+
     const div = document.createElement('div');
     div.className = containerId === 'shorts-list' ? 'short-item' : 'video-item';
-    const videoId = video.id.videoId || video.id;
     div.innerHTML = `
       <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
       <p>${video.snippet.title}</p>
@@ -292,14 +304,12 @@ function displayVideos(videos, containerId, append = false) {
   });
 }
 
-// play video in overlay
-// play video in overlay
+// Play video
 function playVideo(videoId, snippet, stats) {
   const overlay = document.getElementById('overlay');
   const playerDiv = document.getElementById('player');
   const infoDiv = document.getElementById('video-info');
 
-  // Format upload date
   const uploadDate = snippet.publishedAt
     ? new Date(snippet.publishedAt).toLocaleDateString(undefined, {
         year: 'numeric',
@@ -319,7 +329,6 @@ function playVideo(videoId, snippet, stats) {
 
   overlay.style.display = "grid";
 
-  // save to history
   saveToHistory({
     id: videoId,
     title: snippet.title,
@@ -328,50 +337,55 @@ function playVideo(videoId, snippet, stats) {
   });
 }
 
-
-// close overlay
+// Close player
 function closeOverlay() {
   document.getElementById('overlay').style.display = "none";
   document.getElementById('player').innerHTML = "";
 }
 
-// save video to history (localStorage)
+// History
 function saveToHistory(video) {
   let history = JSON.parse(localStorage.getItem("history")) || [];
-  history = history.filter(v => v.id !== video.id); // remove duplicates
-  history.unshift(video); // add to top
-  if (history.length > 50) history.pop(); // limit history
+  history = history.filter(v => v.id !== video.id);
+  history.unshift(video);
+  if (history.length > 50) history.pop();
   localStorage.setItem("history", JSON.stringify(history));
 }
 
-// load history page
+// Load history page
 function loadHistory() {
   currentMode = "history";
   document.getElementById("section-title").innerText = "History";
   document.getElementById("video-list").innerHTML = "";
+  shownVideoIds.clear();
+
   const history = JSON.parse(localStorage.getItem("history")) || [];
   if (history.length === 0) {
     document.getElementById("video-list").innerHTML = "<p>No history yet.</p>";
     return;
   }
+
   history.forEach(video => {
+    if (shownVideoIds.has(video.id)) return;
+    shownVideoIds.add(video.id);
+
     const div = document.createElement('div');
     div.className = "video-item";
     div.innerHTML = `
       <img src="${video.thumbnail}" alt="${video.title}">
       <p>${video.title}</p>
     `;
-    div.onclick = () => playVideo(video.id, { 
-      title: video.title, 
-      channelTitle: video.channel, 
-      description: "" , 
-      thumbnails: { medium: { url: video.thumbnail } } 
+    div.onclick = () => playVideo(video.id, {
+      title: video.title,
+      channelTitle: video.channel,
+      description: "",
+      thumbnails: { medium: { url: video.thumbnail } }
     }, null);
     document.getElementById("video-list").appendChild(div);
   });
 }
 
-// infinite scroll
+// Infinite scroll
 window.addEventListener("scroll", () => {
   if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
     if (currentMode === "fyp") {
@@ -382,7 +396,7 @@ window.addEventListener("scroll", () => {
   }
 });
 
-// initial load
+// Initial load
 function loadFYP() {
   document.getElementById('video-list').innerHTML = "";
   fetchFYP();
@@ -393,9 +407,3 @@ fetchShorts();
 
 </body>
 </html>
-
-
-
-
-
-
