@@ -319,13 +319,14 @@ function playVideo(videoId, snippet, stats) {
     : 'Unknown';
 
   playerDiv.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
-  infoDiv.innerHTML = `
-    <h3>${snippet.title}</h3>
-    <p>Channel: ${snippet.channelTitle}</p>
-    <p>${stats ? stats.viewCount : 'N/A'} views</p>
-    <p>Uploaded on: ${uploadDate}</p>
-    <p>${snippet.description}</p>
-  `;
+ infoDiv.innerHTML = `
+  <h3>${snippet.title}</h3>
+  <p>Channel: ${snippet.channelTitle}</p>
+  <p>${stats ? stats.viewCount : 'N/A'} views • ${stats && stats.likeCount ? stats.likeCount : 'N/A'} likes</p>
+  <p>Uploaded on: ${uploadDate}</p>
+  <p>${snippet.description}</p>
+`;
+
 
   overlay.style.display = "grid";
 
@@ -407,3 +408,4 @@ fetchShorts();
 
 </body>
 </html>
+
