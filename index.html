@@ -293,16 +293,27 @@ function displayVideos(videos, containerId, append = false) {
 }
 
 // play video in overlay
+// play video in overlay
 function playVideo(videoId, snippet, stats) {
   const overlay = document.getElementById('overlay');
   const playerDiv = document.getElementById('player');
   const infoDiv = document.getElementById('video-info');
+
+  // Format upload date
+  const uploadDate = snippet.publishedAt
+    ? new Date(snippet.publishedAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    : 'Unknown';
 
   playerDiv.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
   infoDiv.innerHTML = `
     <h3>${snippet.title}</h3>
     <p>Channel: ${snippet.channelTitle}</p>
     <p>${stats ? stats.viewCount : 'N/A'} views</p>
+    <p>Uploaded on: ${uploadDate}</p>
     <p>${snippet.description}</p>
   `;
 
@@ -316,6 +327,7 @@ function playVideo(videoId, snippet, stats) {
     thumbnail: snippet.thumbnails.medium.url
   });
 }
+
 
 // close overlay
 function closeOverlay() {
@@ -381,6 +393,7 @@ fetchShorts();
 
 </body>
 </html>
+
 
 
 
