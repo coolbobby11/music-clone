@@ -272,6 +272,7 @@
         <p>${stats ? stats.viewCount : 'N/A'} views • ${stats?.likeCount || 'N/A'} likes</p>
         <p>Uploaded on: ${uploadDate}</p>
         <p>${snippet.description}</p>
+        <button onclick="copyLink('${videoId}')" style="margin-top: 10px; padding: 8px 12px; border: none; border-radius: 4px; background-color: #cc0000; color: #fff; cursor: pointer;">Copy Link</button>
       `;
 
       overlay.style.display = "grid";
@@ -282,6 +283,17 @@
         channel: snippet.channelTitle,
         thumbnail: snippet.thumbnails.medium.url
       });
+    }
+
+    function copyLink(videoId) {
+      const link = `https://www.youtube.com/watch?v=${videoId}`;
+      navigator.clipboard.writeText(link)
+        .then(() => {
+          alert("Video link copied to clipboard!");
+        })
+        .catch(err => {
+          console.error("Failed to copy text: ", err);
+        });
     }
 
     function closeOverlay() {
