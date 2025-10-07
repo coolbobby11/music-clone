@@ -11,62 +11,26 @@
       background: #111;
       color: #fff;
     }
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 220px;
-      height: 100%;
-      background: #1a1a1a;
-      padding: 20px 0;
-      box-sizing: border-box;
-    }
-    .sidebar a {
-      display: block;
-      padding: 10px 20px;
-      color: #fff;
-      text-decoration: none;
-      margin-bottom: 5px;
-      cursor: pointer;
-    }
-    .sidebar a:hover {
-      background: #333;
-    }
+
     .top-bar {
-      margin-left: 240px;
-      padding: 10px 20px;
+      padding: 20px;
       display: flex;
-      align-items: center;
-      gap: 20px;
+      justify-content: center;
     }
-    .categories {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      flex: 1;
-    }
-    .categories button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 16px;
-      background: #333;
-      color: #fff;
-      cursor: pointer;
-    }
-    .categories button:hover {
-      background: #555;
-    }
+
     .search-bar {
       display: flex;
       gap: 5px;
     }
+
     .search-bar input {
       padding: 6px 10px;
       border: none;
       border-radius: 16px;
       outline: none;
-      width: 220px;
+      width: 240px;
     }
+
     .search-bar button {
       padding: 6px 12px;
       border: none;
@@ -75,29 +39,35 @@
       color: #fff;
       cursor: pointer;
     }
+
     .search-bar button:hover {
       background: #ff0000;
     }
+
     .video-section {
-      margin-left: 240px;
       padding: 20px;
     }
+
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
     }
+
     .video-item {
       cursor: pointer;
     }
+
     .video-item img {
       width: 100%;
       border-radius: 6px;
     }
+
     .video-item p {
-      margin: 5px 0 0 0;
+      margin: 4px 0;
       font-size: 14px;
     }
+
     .overlay {
       position: fixed;
       top: 0;
@@ -112,31 +82,37 @@
       box-sizing: border-box;
       z-index: 1000;
     }
+
     .player {
       background: #000;
       padding: 10px;
       border-radius: 6px;
     }
+
     .player iframe {
       width: 100%;
       height: 70vh;
       border: none;
       border-radius: 6px;
     }
+
     .video-info {
       overflow-y: auto;
       background: #1a1a1a;
       padding: 15px;
       border-radius: 6px;
     }
+
     .video-info h3 {
       margin: 0 0 10px 0;
     }
+
     .video-info p {
       margin: 5px 0;
       font-size: 14px;
       color: #bbb;
     }
+
     .close-btn {
       position: absolute;
       top: 15px;
@@ -149,17 +125,7 @@
 </head>
 <body>
 
-  <div class="sidebar">
-    <a onclick="loadFYP()">Home</a>
-    <a onclick="loadHistory()">History</a>
-  </div>
-
   <div class="top-bar">
-    <div class="categories">
-      <button onclick="loadFYP()">All</button>
-      <button>Music</button>
-      <button>Gaming</button>
-    </div>
     <div class="search-bar">
       <input type="text" id="search-input" placeholder="Search...">
       <button onclick="searchVideos()">Search</button>
@@ -178,11 +144,21 @@
   </div>
 
   <script>
-    const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // Replace with your own API key
+    const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // Replace with your YouTube Data API v3 key
     let nextPageToken = null;
     let currentMode = "fyp";
     let currentQuery = "";
     let shownVideoIds = new Set();
+
+    function parseISODuration(isoDuration) {
+      const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+      const hours = parseInt(match[1]) || 0;
+      const minutes = parseInt(match[2]) || 0;
+      const seconds = parseInt(match[3]) || 0;
+      return hours
+        ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        : `${minutes}:${String(seconds).padStart(2, '0')}`;
+    }
 
     async function fetchFYP(loadMore = false) {
       if (!loadMore) {
@@ -190,7 +166,7 @@
         shownVideoIds.clear();
       }
 
-      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&chart=mostPopular&regionCode=US&maxResults=12&key=${API_KEY}`;
+      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status,contentDetails&chart=mostPopular&regionCode=US&maxResults=12&key=${API_KEY}`;
       if (loadMore && nextPageToken) url += `&pageToken=${nextPageToken}`;
 
       const res = await fetch(url);
@@ -214,11 +190,10 @@
 
       const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`);
       const searchData = await searchRes.json();
-
       const videoIds = searchData.items.map(item => item.id.videoId).join(',');
       if (!videoIds) return;
 
-      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${videoIds}&key=${API_KEY}`;
+      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status,contentDetails&id=${videoIds}&key=${API_KEY}`;
       const videoRes = await fetch(url);
       const videoData = await videoRes.json();
 
@@ -235,17 +210,41 @@
 
       videos.forEach(video => {
         const videoId = video.id.videoId || video.id;
-
-        // Only include embeddable videos
         if (video.status && !video.status.embeddable) return;
         if (shownVideoIds.has(videoId)) return;
         shownVideoIds.add(videoId);
 
+        const thumbnail = video.snippet.thumbnails.medium.url;
+        const title = video.snippet.title;
+        const channel = video.snippet.channelTitle;
+        const views = Number(video.statistics?.viewCount || 0).toLocaleString();
+        const publishedDate = new Date(video.snippet.publishedAt);
+        const now = new Date();
+        const diffMonths = Math.floor((now - publishedDate) / (1000 * 60 * 60 * 24 * 30));
+        const timeAgo = diffMonths > 0 ? `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago` : "Recently";
+        const duration = video.contentDetails?.duration
+          ? parseISODuration(video.contentDetails.duration)
+          : "";
+
         const div = document.createElement('div');
         div.className = 'video-item';
         div.innerHTML = `
-          <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
-          <p>${video.snippet.title}</p>
+          <div style="position: relative;">
+            <img src="${thumbnail}" alt="${title}">
+            <span style="
+              position: absolute;
+              bottom: 5px;
+              right: 5px;
+              background: rgba(0,0,0,0.8);
+              color: white;
+              padding: 2px 4px;
+              font-size: 12px;
+              border-radius: 3px;
+            ">${duration}</span>
+          </div>
+          <p style="font-weight: bold;">${title}</p>
+          <p style="color: #aaa; font-size: 13px;">${channel}</p>
+          <p style="color: #aaa; font-size: 13px;">${views} views • ${timeAgo}</p>
         `;
         div.onclick = () => playVideo(videoId, video.snippet, video.statistics);
         container.appendChild(div);
@@ -276,69 +275,18 @@
       `;
 
       overlay.style.display = "grid";
-
-      saveToHistory({
-        id: videoId,
-        title: snippet.title,
-        channel: snippet.channelTitle,
-        thumbnail: snippet.thumbnails.medium.url
-      });
     }
 
     function copyLink(videoId) {
       const link = `https://www.youtube.com/watch?v=${videoId}`;
       navigator.clipboard.writeText(link)
-        .then(() => {
-          alert("Video link copied to clipboard!");
-        })
-        .catch(err => {
-          console.error("Failed to copy text: ", err);
-        });
+        .then(() => alert("Video link copied to clipboard!"))
+        .catch(err => console.error("Failed to copy text: ", err));
     }
 
     function closeOverlay() {
       document.getElementById('overlay').style.display = "none";
       document.getElementById('player').innerHTML = "";
-    }
-
-    function saveToHistory(video) {
-      let history = JSON.parse(localStorage.getItem("history")) || [];
-      history = history.filter(v => v.id !== video.id);
-      history.unshift(video);
-      if (history.length > 50) history.pop();
-      localStorage.setItem("history", JSON.stringify(history));
-    }
-
-    function loadHistory() {
-      currentMode = "history";
-      document.getElementById("section-title").innerText = "History";
-      document.getElementById("video-list").innerHTML = "";
-      shownVideoIds.clear();
-
-      const history = JSON.parse(localStorage.getItem("history")) || [];
-      if (history.length === 0) {
-        document.getElementById("video-list").innerHTML = "<p>No history yet.</p>";
-        return;
-      }
-
-      history.forEach(video => {
-        if (shownVideoIds.has(video.id)) return;
-        shownVideoIds.add(video.id);
-
-        const div = document.createElement('div');
-        div.className = "video-item";
-        div.innerHTML = `
-          <img src="${video.thumbnail}" alt="${video.title}">
-          <p>${video.title}</p>
-        `;
-        div.onclick = () => playVideo(video.id, {
-          title: video.title,
-          channelTitle: video.channel,
-          description: "",
-          thumbnails: { medium: { url: video.thumbnail } }
-        }, null);
-        document.getElementById("video-list").appendChild(div);
-      });
     }
 
     window.addEventListener("scroll", () => {
@@ -348,12 +296,7 @@
       }
     });
 
-    function loadFYP() {
-      document.getElementById('video-list').innerHTML = "";
-      fetchFYP();
-    }
-
-    loadFYP();
+    fetchFYP();
   </script>
 </body>
 </html>
