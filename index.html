@@ -1,260 +1,455 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>YouTube Player (Filtered)</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>YouTube — For you (CSS + Live Data)</title>
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #111;
-      color: #fff;
+    /* ===== Theme & base ===== */
+    :root{
+      --bg:#0f0f10;
+      --card:#141414;
+      --muted:#b3b3b3;
+      --accent:#ff0000;
+      --glass: rgba(255,255,255,0.03);
+      --gap:16px;
+      --max-width:1200px;
+      --sidebar-width:240px;
+      --radius:12px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color-scheme: dark;
     }
 
-    .top-bar {
-      padding: 20px;
-      display: flex;
-      justify-content: center;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+background: #0f0f10;
+      color:#fff;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      font-size:14px;
     }
 
-    .search-bar {
-      display: flex;
-      gap: 5px;
+    /* ===== Page layout ===== */
+    .app{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      min-height:100vh;
     }
 
-    .search-bar input {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 16px;
-      outline: none;
-      width: 240px;
+    header{
+      position:sticky;top:0;z-index:40;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(20,20,20,0.6), rgba(10,10,10,0.2));
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      padding:10px 20px;
     }
 
-    .search-bar button {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 16px;
-      background: #cc0000;
-      color: #fff;
-      cursor: pointer;
+    .header-inner{
+      max-width:var(--max-width);
+      margin:0 auto;display:flex;align-items:center;gap:12px;
     }
 
-    .search-bar button:hover {
-      background: #ff0000;
+    .logo{
+      display:flex;align-items:center;gap:10px;font-weight:600;
     }
-
-    .video-section {
-      padding: 20px;
+    .logo .badge{width:36px;height:24px;background:var(--accent);border-radius:4px;display:inline-block}
+    .search{
+      flex:1;display:flex;align-items:center;gap:8px;justify-content:center;
     }
+    .search input{width:60%;max-width:520px;padding:8px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--muted);}
+    .right-actions{display:flex;gap:10px;align-items:center}
+    .icon{width:36px;height:36px;border-radius:50%;background:var(--glass);display:grid;place-items:center;color:var(--muted)}
 
-    .video-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 14px;
-    }
+    /* ===== Main area ===== */
+  .container {
+  width: 100%;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  gap: var(--gap);
+  padding: 0 20px;
+}
 
-    .video-item {
-      cursor: pointer;
-    }
+    aside.sidebar{height:calc(100vh - 120px);position:sticky;top:84px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
+    .nav{display:flex;flex-direction:column;gap:6px}
+    .nav a{padding:8px 10px;border-radius:10px;color:var(--muted);text-decoration:none}
+    .nav a.active{background:rgba(255,255,255,0.03);color:#fff;font-weight:600}
 
-    .video-item img {
-      width: 100%;
-      border-radius: 6px;
-    }
+    main{padding:6px}
 
-    .video-item p {
-      margin: 4px 0;
-      font-size: 14px;
-    }
+    /* ===== Hero row (For you) ===== */
+    .hero{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .hero .title{display:flex;flex-direction:column}
+    .hero h1{margin:0;font-size:20px}
+    .hero p{margin:2px 0 0;color:var(--muted);font-size:13px}
 
+    .filters{display:flex;gap:8px}
+ 
+.chip {
+  background: transparent !important;
+  color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+
+.chip.selected {
+  background: transparent;
+  color: transparent;
+  border-color: transparent;
+  pointer-events: none; /* optional: disables interaction */
+}
+
+
+    /* ===== Shorts strip ===== */
+.shorts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  overflow: hidden;       /* remove scrollbars */
+  padding: 8px 4px;
+  margin-bottom: 12px;
+}
+
+
+    .short{min-width:160px;height:300px;border-radius:12px;background:linear-gradient(180deg,#222,#141414);display:flex;flex-direction:column;justify-content:flex-end;padding:10px;color:#fff;cursor:pointer}
+    .short .label{font-weight:700}
+    .short img{width:100%;height:100%;object-fit:cover;border-radius:12px;position:absolute;left:0;top:0}
+    .short-inner{position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;background:linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.6) 60%);}
+
+    /* ===== Video grid ===== */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{background:var(--card);border-radius:12px;padding:10px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;overflow:hidden}
+    .thumb{height:160px;border-radius:8px;background:linear-gradient(135deg,#2a2a2a,#1a1a1a);display:flex;align-items:flex-end;padding:8px;position:relative;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}
+    .thumb .duration{background:rgba(0,0,0,0.6);padding:4px 6px;border-radius:6px;font-size:12px;color:#fff;position:absolute;right:8px;bottom:8px}
+    .meta{display:flex;gap:10px;margin-top:10px}
+    .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(180deg,#333,#111);flex-shrink:0}
+    .details{flex:1}
+    .details h3{margin:0 0 6px 0;font-size:15px}
+    .details p{margin:0;color:var(--muted);font-size:13px}
+
+    /* ===== Overlay player ===== */
     .overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
+      background: rgba(0,0,0,0.85);
       display: none;
       grid-template-columns: 2fr 1fr;
       gap: 20px;
-      padding: 20px;
+      padding: 40px;
       box-sizing: border-box;
       z-index: 1000;
+      align-items:start;
     }
-
+    .overlay.show { display: grid; }
     .player {
       background: #000;
       padding: 10px;
-      border-radius: 6px;
+      border-radius: 8px;
     }
-
     .player iframe {
       width: 100%;
-      height: 70vh;
+      height: 75vh;
       border: none;
       border-radius: 6px;
     }
-
     .video-info {
       overflow-y: auto;
       background: #1a1a1a;
       padding: 15px;
       border-radius: 6px;
+      max-height: 80vh;
     }
-
-    .video-info h3 {
-      margin: 0 0 10px 0;
-    }
-
-    .video-info p {
-      margin: 5px 0;
-      font-size: 14px;
-      color: #bbb;
-    }
-
+    .video-info h3 { margin: 0 0 10px 0; }
+    .video-info p { margin: 6px 0; color: #bbb; font-size: 14px; }
     .close-btn {
       position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 28px;
+      top: 18px;
+      right: 26px;
+      font-size: 36px;
       color: #fff;
       cursor: pointer;
+      z-index:1001;
     }
+
+    /* ===== Responsive ===== */
+    @media (max-width:1000px){
+      .container{grid-template-columns:200px 1fr}
+      .grid{grid-template-columns:repeat(2,1fr)}
+      .thumb{height:140px}
+    }
+    @media (max-width:720px){
+      .container{grid-template-columns:1fr;padding:0 12px}
+      aside.sidebar{display:none}
+      .grid{grid-template-columns:repeat(1,1fr)}
+      .search input{width:100%}
+      .short{min-width:120px;height:220px}
+      .overlay{padding:16px;grid-template-columns:1fr}
+      .player iframe{height:50vh}
+    }
+
+    /* ===== Small niceties: keyboard focus, hover ===== */
+    a:focus{outline:3px solid rgba(255,255,255,0.06);outline-offset:2px}
+    .card:hover{transform:translateY(-6px);transition:transform .18s}
+    .chip:active{transform:translateY(1px)}
+
+    /* ===== CSS-only 'tabs' example for filters (no JS) ===== */
+    .tabs{display:flex;gap:6px;margin-bottom:12px}
+    input[type=radio]{display:none}
+    label.tab{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    input[type=radio]:checked + label.tab{background:var(--accent);color:#fff;border-color:transparent}
+
+    /* small footer note */
+    .note{margin-top:18px;color:var(--muted);font-size:13px}
   </style>
 </head>
 <body>
+  <div class="app">
+    <header>
+      <div class="header-inner">
+        <div class="search" role="search">
+          <input aria-label="Search" placeholder="Search" />
+        </div>
+        <div class="right-actions">
+        </div>
+      </div>
+    </header>
 
-  <div class="top-bar">
-    <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Search...">
-      <button onclick="searchVideos()">Search</button>
+    <div class="container">
+      <aside class="sidebar" aria-label="Left navigation">
+        <nav class="nav">
+          <a href="#" data-action="home" class="active">Home</a>
+          <a href="#" data-action="history">History</a>
+        </nav>
+      </aside>
+
+      <main>
+        <div class="hero">
+          <div class="title">
+            <h1>For you</h1>
+            <p>Recommended videos picked just for you</p>
+          </div>
+
+          <div class="filters">
+            <span class="chip selected" data-cat="">All</span>
+          </div>
+        </div>
+
+        <!-- CSS-only tabs control (example) -->
+        <div class="tabs" role="tablist">
+          <input type="radio" name="t" id="t1" checked>
+          <label class="tab" for="t1">For you</label>
+        </div>
+
+        <!-- Shorts strip -->
+        <div class="shorts" aria-label="Shorts"></div>
+
+        <!-- Video grid -->
+        <section class="grid" aria-label="Recommended videos"></section>
+
+        <p class="note">This is a live YouTube \"For you\" page — powered by YouTube Data API (client-side). Thumbnails, titles and playable embeds are fetched dynamically.</p>
+
+      </main>
     </div>
   </div>
 
-  <div class="video-section">
-    <h2 id="section-title">For You</h2>
-    <div class="video-grid" id="video-list"></div>
-  </div>
-
-  <div class="overlay" id="overlay">
-    <span class="close-btn" onclick="closeOverlay()">×</span>
+  <!-- Overlay player (added for functionality) -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="close-btn" id="close-btn" title="Close">×</div>
     <div class="player" id="player"></div>
     <div class="video-info" id="video-info"></div>
   </div>
 
   <script>
-    const API_KEY = 'AIzaSyCdNJr3LrTw1ObLmRp0nk5Rn2wr8AdnwI8'; // Replace with your YouTube Data API v3 key
+    /* -------------------------
+       Configuration & state
+       ------------------------- */
+    const API_KEY = 'AIzaSyDN_G3ti9ZDKMCBqb_7JokZE3p50bcksos'; // using the key you provided
+    const MAX_RESULTS = 12;
+
+    let currentMode = 'fyp'; // 'fyp' | 'search' | 'history'
     let nextPageToken = null;
-    let currentMode = "fyp";
-    let currentQuery = "";
+    let currentQuery = '';
     let shownVideoIds = new Set();
 
-    function parseISODuration(isoDuration) {
-      const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-      const hours = parseInt(match[1]) || 0;
-      const minutes = parseInt(match[2]) || 0;
-      const seconds = parseInt(match[3]) || 0;
-      return hours
-        ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-        : `${minutes}:${String(seconds).padStart(2, '0')}`;
+    const videoGrid = document.querySelector('.grid');
+    const shortsStrip = document.querySelector('.shorts');
+    const searchInput = document.querySelector('.search input');
+    const overlay = document.getElementById('overlay');
+    const playerDiv = document.getElementById('player');
+    const infoDiv = document.getElementById('video-info');
+
+    /* -------------------------
+       Helpers
+       ------------------------- */
+    function el(tag, attrs = {}, html = '') {
+      const d = document.createElement(tag);
+      for (const k in attrs) {
+        if (k === 'on') d.addEventListener(attrs[k].ev, attrs[k].fn);
+        else d.setAttribute(k, attrs[k]);
+      }
+      if (html) d.innerHTML = html;
+      return d;
     }
 
+    function showOverlay() {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function hideOverlay() {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      playerDiv.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+
+    /* -------------------------
+       Fetch For You (mostPopular)
+       ------------------------- */
     async function fetchFYP(loadMore = false) {
       if (!loadMore) {
         nextPageToken = null;
         shownVideoIds.clear();
+        videoGrid.innerHTML = '';
       }
-
-      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status,contentDetails&chart=mostPopular&regionCode=US&maxResults=12&key=${API_KEY}`;
+      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&chart=mostPopular&regionCode=US&maxResults=${MAX_RESULTS}&key=${API_KEY}`;
       if (loadMore && nextPageToken) url += `&pageToken=${nextPageToken}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-      nextPageToken = data.nextPageToken || null;
-      displayVideos(data.items, 'video-list', loadMore);
-      currentMode = "fyp";
-      document.getElementById("section-title").innerText = "For You";
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        nextPageToken = data.nextPageToken || null;
+        displayVideos(data.items || []);
+        currentMode = 'fyp';
+        document.querySelector('.hero h1').innerText = 'For you';
+      } catch (err) {
+        console.error('FYP fetch error', err);
+      }
     }
 
-    async function searchVideos(loadMore = false) {
-      const query = loadMore ? currentQuery : document.getElementById('search-input').value;
-      if (!query) return;
+    /* -------------------------
+       Fetch Shorts (approximation)
+       ------------------------- */
+    async function fetchShorts() {
+      // Using search endpoint with 'shorts' and videoDuration=short to approximate real shorts.
+      try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=shorts&videoDuration=short&key=${API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const items = data.items || [];
+        // fetch full video objects for embeddable & stats
+        const ids = items.map(i => i.id.videoId).filter(Boolean).join(',');
+        if (!ids) return;
+        const vidRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${ids}&key=${API_KEY}`);
+        const vidData = await vidRes.json();
+        displayShorts(vidData.items || []);
+      } catch (err) {
+        console.error('Shorts fetch error', err);
+      }
+    }
 
+    /* -------------------------
+       Search
+       ------------------------- */
+    let searchPageToken = null;
+    async function searchVideos(loadMore = false) {
+      const query = loadMore ? currentQuery : (searchInput.value || '').trim();
+      if (!query) return;
       if (!loadMore) {
         shownVideoIds.clear();
-        document.getElementById('section-title').innerText = `Results for "${query}"`;
-        document.getElementById('video-list').innerHTML = "";
-        nextPageToken = null;
+        videoGrid.innerHTML = '';
+        searchPageToken = null;
+        document.querySelector('.hero h1').innerText = `Results for "${query}"`;
       }
-
-      const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`);
-      const searchData = await searchRes.json();
-      const videoIds = searchData.items.map(item => item.id.videoId).join(',');
-      if (!videoIds) return;
-
-      let url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status,contentDetails&id=${videoIds}&key=${API_KEY}`;
-      const videoRes = await fetch(url);
-      const videoData = await videoRes.json();
-
-      nextPageToken = videoData.nextPageToken || null;
-      currentMode = "search";
-      currentQuery = query;
-
-      displayVideos(videoData.items, 'video-list', loadMore);
+      try {
+        let sUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${MAX_RESULTS}&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+        if (loadMore && searchPageToken) sUrl += `&pageToken=${searchPageToken}`;
+        const sRes = await fetch(sUrl);
+        const sData = await sRes.json();
+        searchPageToken = sData.nextPageToken || null;
+        const ids = (sData.items || []).map(i => i.id.videoId).filter(Boolean).join(',');
+        if (!ids) return;
+        const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=${ids}&key=${API_KEY}`);
+        const vData = await vRes.json();
+        displayVideos(vData.items || []);
+        currentMode = 'search';
+        currentQuery = query;
+      } catch (err) {
+        console.error('Search error', err);
+      }
     }
 
-    function displayVideos(videos, containerId, append = false) {
-      const container = document.getElementById(containerId);
-      if (!append) container.innerHTML = "";
-
+    /* -------------------------
+       Display helpers
+       ------------------------- */
+    function displayVideos(videos) {
       videos.forEach(video => {
-        const videoId = video.id.videoId || video.id;
+        const videoId = video.id && (video.id.videoId || video.id);
+        if (!videoId) return;
         if (video.status && !video.status.embeddable) return;
         if (shownVideoIds.has(videoId)) return;
         shownVideoIds.add(videoId);
 
-        const thumbnail = video.snippet.thumbnails.medium.url;
-        const title = video.snippet.title;
-        const channel = video.snippet.channelTitle;
-        const views = Number(video.statistics?.viewCount || 0).toLocaleString();
-        const publishedDate = new Date(video.snippet.publishedAt);
-        const now = new Date();
-        const diffMonths = Math.floor((now - publishedDate) / (1000 * 60 * 60 * 24 * 30));
-        const timeAgo = diffMonths > 0 ? `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago` : "Recently";
-        const duration = video.contentDetails?.duration
-          ? parseISODuration(video.contentDetails.duration)
-          : "";
-
-        const div = document.createElement('div');
-        div.className = 'video-item';
-        div.innerHTML = `
-          <div style="position: relative;">
-            <img src="${thumbnail}" alt="${title}">
-            <span style="
-              position: absolute;
-              bottom: 5px;
-              right: 5px;
-              background: rgba(0,0,0,0.8);
-              color: white;
-              padding: 2px 4px;
-              font-size: 12px;
-              border-radius: 3px;
-            ">${duration}</span>
+        const card = document.createElement('article');
+        card.className = 'card';
+        const thumbUrl = (video.snippet && (video.snippet.thumbnails && (video.snippet.thumbnails.high || video.snippet.thumbnails.medium || video.snippet.thumbnails.default)).url) || '';
+        const duration = video.contentDetails && video.contentDetails.duration ? parseISODuration(video.contentDetails.duration) : (video.statistics && video.statistics.duration ? video.statistics.duration : '');
+        // Build inner structure
+        card.innerHTML = `
+          <div class="thumb">
+            <img src="${thumbUrl}" alt="${escapeHtml(video.snippet.title || '')}">
+            <div class="duration">${video.snippet.channelTitle ? '' : ''}</div>
           </div>
-          <p style="font-weight: bold;">${title}</p>
-          <p style="color: #aaa; font-size: 13px;">${channel}</p>
-          <p style="color: #aaa; font-size: 13px;">${views} views • ${timeAgo}</p>
+          <div class="meta">
+            <div class="avatar"></div>
+            <div class="details">
+              <h3>${escapeHtml(video.snippet.title || '')}</h3>
+              <p>${escapeHtml(video.snippet.channelTitle || '')} • ${formatViews(video.statistics?.viewCount)} views</p>
+            </div>
+          </div>
         `;
-        div.onclick = () => playVideo(videoId, video.snippet, video.statistics);
-        container.appendChild(div);
+        card.onclick = () => playVideo(videoId, video.snippet, video.statistics);
+        videoGrid.appendChild(card);
       });
     }
 
-    function playVideo(videoId, snippet, stats) {
-      const overlay = document.getElementById('overlay');
-      const playerDiv = document.getElementById('player');
-      const infoDiv = document.getElementById('video-info');
+    function displayShorts(items) {
+      shortsStrip.innerHTML = '';
+      items.forEach(video => {
+        const videoId = video.id;
+        if (!videoId) return;
+        if (video.status && !video.status.embeddable) return;
+        const thumb = video.snippet.thumbnails && (video.snippet.thumbnails.high || video.snippet.thumbnails.medium || video.snippet.thumbnails.default);
+        const shortDiv = document.createElement('div');
+        shortDiv.className = 'short';
+        shortDiv.innerHTML = `
+          <div class="short-inner">
+            <img src="${thumb ? thumb.url : ''}" alt="${escapeHtml(video.snippet.title || '')}">
+            <div class="label">${escapeHtml(video.snippet.title || '')}</div>
+          </div>
+        `;
+        shortDiv.onclick = () => playVideo(videoId, video.snippet, video.statistics || {});
+        shortsStrip.appendChild(shortDiv);
+      });
+    }
+
+    /* -------------------------
+       Play video / overlay
+       ------------------------- */
+    async function playVideo(videoId, snippet = {}, stats = null) {
+      // ensure we have statistics (if not provided)
+      if (!stats) {
+        try {
+          const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoId}&key=${API_KEY}`);
+          const data = await res.json();
+          stats = (data.items && data.items[0] && data.items[0].statistics) || null;
+        } catch (e) { console.warn('Failed to fetch stats', e); }
+      }
 
       const uploadDate = snippet.publishedAt
         ? new Date(snippet.publishedAt).toLocaleDateString(undefined, {
@@ -264,39 +459,181 @@
           })
         : 'Unknown';
 
-      playerDiv.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+      // embed player
+      playerDiv.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+
       infoDiv.innerHTML = `
-        <h3>${snippet.title}</h3>
-        <p>Channel: ${snippet.channelTitle}</p>
-        <p>${stats ? stats.viewCount : 'N/A'} views • ${stats?.likeCount || 'N/A'} likes</p>
+        <h3>${escapeHtml(snippet.title || 'Untitled')}</h3>
+        <p>Channel: ${escapeHtml(snippet.channelTitle || '')}</p>
+        <p>${formatViews(stats?.viewCount)} views • ${stats?.likeCount ?? 'N/A'} likes</p>
         <p>Uploaded on: ${uploadDate}</p>
-        <p>${snippet.description}</p>
-        <button onclick="copyLink('${videoId}')" style="margin-top: 10px; padding: 8px 12px; border: none; border-radius: 4px; background-color: #cc0000; color: #fff; cursor: pointer;">Copy Link</button>
+        <hr>
+        <p style="white-space:pre-wrap;color:#ddd">${escapeHtml(snippet.description || '')}</p>
       `;
 
-      overlay.style.display = "grid";
+      saveToHistory({
+        id: videoId,
+        title: snippet.title || '',
+        channel: snippet.channelTitle || '',
+        thumbnail: (snippet.thumbnails && (snippet.thumbnails.high || snippet.thumbnails.medium || snippet.thumbnails.default)).url || ''
+      });
+
+      showOverlay();
     }
 
-    function copyLink(videoId) {
-      const link = `https://www.youtube.com/watch?v=${videoId}`;
-      navigator.clipboard.writeText(link)
-        .then(() => alert("Video link copied to clipboard!"))
-        .catch(err => console.error("Failed to copy text: ", err));
+    document.getElementById('close-btn').addEventListener('click', hideOverlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) hideOverlay();
+    });
+
+    /* -------------------------
+       History (localStorage)
+       ------------------------- */
+    function saveToHistory(video) {
+      try {
+        let history = JSON.parse(localStorage.getItem('history') || '[]');
+        history = history.filter(v => v.id !== video.id);
+        history.unshift(video);
+        if (history.length > 50) history.pop();
+        localStorage.setItem('history', JSON.stringify(history));
+      } catch (e) { console.warn('history save failed', e); }
     }
 
-    function closeOverlay() {
-      document.getElementById('overlay').style.display = "none";
-      document.getElementById('player').innerHTML = "";
+    function loadHistory() {
+      currentMode = 'history';
+      document.querySelector('.hero h1').innerText = 'History';
+      videoGrid.innerHTML = '';
+      shownVideoIds.clear();
+      const history = JSON.parse(localStorage.getItem('history') || '[]');
+      if (!history || history.length === 0) {
+        videoGrid.innerHTML = '<p style="color:var(--muted)">No history yet.</p>';
+        return;
+      }
+      history.forEach(item => {
+        if (shownVideoIds.has(item.id)) return;
+        shownVideoIds.add(item.id);
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="thumb">
+            <img src="${item.thumbnail}" alt="${escapeHtml(item.title)}">
+          </div>
+          <div class="meta">
+            <div class="avatar"></div>
+            <div class="details">
+              <h3>${escapeHtml(item.title)}</h3>
+              <p>${escapeHtml(item.channel)}</p>
+            </div>
+          </div>
+        `;
+        card.onclick = () => playVideo(item.id, {
+          title: item.title,
+          channelTitle: item.channel,
+          description: '',
+          thumbnails: { medium: { url: item.thumbnail } }
+        }, null);
+        videoGrid.appendChild(card);
+      });
     }
 
-    window.addEventListener("scroll", () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        if (currentMode === "fyp") fetchFYP(true);
-        else if (currentMode === "search") searchVideos(true);
+    /* -------------------------
+       Infinite scroll
+       ------------------------- */
+    window.addEventListener('scroll', () => {
+      if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 120)) {
+        if (currentMode === 'fyp') fetchFYP(true);
+        else if (currentMode === 'search') searchVideos(true);
       }
     });
 
+    /* -------------------------
+       Wire up UI interactions
+       ------------------------- */
+    // sidebar actions
+    document.querySelectorAll('aside.sidebar a[data-action]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const action = a.getAttribute('data-action');
+        if (action === 'home') {
+          document.querySelectorAll('.nav a').forEach(x => x.classList.remove('active'));
+          a.classList.add('active');
+          fetchFYP();
+        } else if (action === 'history') {
+          document.querySelectorAll('.nav a').forEach(x => x.classList.remove('active'));
+          a.classList.add('active');
+          loadHistory();
+        }
+      });
+    });
+
+    // search with Enter and Search button (search button area: use header search input's sibling? there's no button in mock header)
+    // Add a simple key handler (Enter triggers search)
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        searchVideos(false);
+      }
+    });
+
+    // chips (category quick searches)
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        const cat = chip.getAttribute('data-cat') || '';
+        if (!cat) {
+          fetchFYP();
+        } else {
+          searchInput.value = cat;
+          searchVideos(false);
+        }
+      });
+    });
+
+    /* -------------------------
+       Utility functions
+       ------------------------- */
+    function escapeHtml(str = '') {
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+
+    function formatViews(v) {
+      if (!v) return '0';
+      const n = Number(v);
+      if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+      return String(n);
+    }
+
+    // rough ISO8601 duration parser to mm:ss (if present)
+    function parseISODuration(iso) {
+      if (!iso) return '';
+      // This is a simple extractor that handles minutes/seconds/hours
+      const matchH = iso.match(/(\d+)H/);
+      const matchM = iso.match(/(\d+)M/);
+      const matchS = iso.match(/(\d+)S/);
+      const h = matchH ? Number(matchH[1]) : 0;
+      const m = matchM ? Number(matchM[1]) : 0;
+      const s = matchS ? Number(matchS[1]) : 0;
+      const total = h*3600 + m*60 + s;
+      const mm = Math.floor((total % 3600) / 60);
+      const ss = total % 60;
+      return (h ? (h + ':') : '') + String(	mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+    }
+
+    /* -------------------------
+       Initial load
+       ------------------------- */
+    // Fill initial static cards area with live FYP videos and live shorts
     fetchFYP();
+    fetchShorts();
+
+    // Small enhancement: allow clicking the pre-existing cards? those are replaced by live items, so no extra work.
   </script>
 </body>
 </html>
