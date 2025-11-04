@@ -409,7 +409,7 @@
         } catch (e) { console.warn('Failed to fetch stats', e); }
       }
 
-      playerDiv.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      playerDiv.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 
       const uploadDate = snippet.publishedAt
         ? new Date(snippet.publishedAt).toLocaleDateString(undefined, {year:'numeric',month:'long',day:'numeric'})
@@ -513,3 +513,4 @@
   </script>
 </body>
 </html>
+
